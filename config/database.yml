@@ -1,0 +1,27 @@
+common: &common
+  adapter: postgresql
+  host: <%= ENV['DB_PORT_5432_TCP_ADDR'] %>
+  port: <%= ENV['DB_PORT_5432_TCP_PORT'] %>
+  username: postgres
+  pool: 5
+  timeout: 5000
+
+development:
+  <<: *common
+  host: localhost
+  port: 5432
+  database: compose_development
+  username: dipeshgautam
+test:
+  <<: *common
+  database: compose_test
+
+staging:
+  <<: *common
+  database: compose_staging
+
+production:
+  <<: *common
+  database: compose_production
+  host: postgres.production.composer.com
+  port: 5432
