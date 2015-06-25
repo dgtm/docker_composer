@@ -1,0 +1,20 @@
+db:
+  image: postgres
+  ports:
+    - "5432"
+  volumes_from:
+    - pgdata
+  environment:
+    - PGDATA=/pgdata
+web:
+  build: .
+  ports:
+    - "8000:8000"
+  links:
+    - db
+nginx:
+  build: 'docker_builds/nginx'
+  ports:
+    - "127.0.0.1:80:80"
+  volumes:
+    - ~/Work/docker_composer/public/:/usr/share/nginx/html
