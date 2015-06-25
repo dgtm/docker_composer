@@ -1,0 +1,49 @@
+== Simple Docker Framework for Ruby on Rails with Unicorn and Nginx
+
+* Build the images
+<code>
+docker-compose build db
+docker-compose build web
+</code>
+
+* Get Skydock and SkyDNS up
+If you are using boot2docker, add EXTRA_ARGS="--dns 172.17.42.1" in your /var/lib/boot2docker/profile. Also, check your /etc/resolv.conf)
+
+<code>
+docker run -d -p 172.17.42.1:53:53/udp --name skydns crosbymichael/skydns -nameserver 8.8.8.8:53 -domain composer.com
+
+docker run -d -v /var/run/docker.sock:/docker.sock --name skydock crosbymichael/skydock -ttl 30 -environment production -s /docker.sock -domain composer.com -name skydns
+</code>
+
+* Get up nginx reverse proxy to support multiple unicorns
+<code>
+docker run -d -p 80:80 -e DEFAULT_HOST=frontend.composer.com -v /var/run/docker.sock:/tmp/docker.sock:ro jwilder/nginx-proxy
+</code>
+
+* Create your DB
+<code>
+docker run --rm -it --name db_create web_container  bundle exec rake db:create
+</code>
+* Get DB and App up
+<code>
+docker run db
+docker run  -p 8000 -e VIRTUAL_HOST=frontend.composer.com --name frontend1 dockercomposer_web
+docker run  -p 8000 -e VIRTUAL_HOST=frontend.composer.com --name frontend2 dockercomposer_web
+</code>
+
+
+
+nginx is included in docker_builds directory and can be used standalone as well.
+If the web container is linked to it as --link web_container:web, you get http://web:8000/ in nginx configuration for free.
+
+You can add the static file location as /public in your nginx.conf, after that, precompile your assets in Dockerfile, add a volume to your web's Dockerfile to point to /public. Now copy over assets to this location and create a symlink from app/public to this volume. The gotcha here is to create your public folder and copy it as a volume because anything run in Dockerfile after the VOLUME statement wont change that volume.
+
+<code>
+RUN ...
+VOLUME ["/public"]
+</code>
+
+You can use nginx reverse proxy's Dockerfile and template to modify the behavior to support this behavior but I am not gonna do it.
+
+* Disclaimer
+ Names and IPs are conventional and random. Cant believe they will work on your machine.
